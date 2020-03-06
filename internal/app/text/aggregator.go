@@ -8,16 +8,19 @@ type Aggregator interface {
 }
 
 type aggregator struct {
+	done chan struct{}
 }
 
 func NewAggregator() *aggregator {
-	return &aggregator{}
+	return &aggregator{
+		done: make(chan struct{}),
+	}
 }
 
 func (a aggregator) Aggregate(<-chan Tag) {
-	panic("implement me")
+
 }
 
 func (a aggregator) Done() <-chan struct{} {
-	panic("implement me")
+	return a.done
 }
