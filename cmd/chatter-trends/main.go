@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/azarakovskiy/chatter-trends/internal/app/audio"
-	"github.com/azarakovskiy/chatter-trends/internal/app/text"
+	"github.com/taxibeat/hackathon-chatter-trends/internal/app/audio"
+	listener "github.com/taxibeat/hackathon-chatter-trends/internal/app/audio/listener"
+	"github.com/taxibeat/hackathon-chatter-trends/internal/app/text"
 )
 
 func main() {
-	dataCh := make(chan audio.Data)
+	dataCh := make(chan listener.Data)
 	tagCh := make(chan text.Tag)
 
-	listener := audio.NewListener()
-	go listener.Listen(dataCh)
+	l := listener.NewListener()
+	go l.Listen(dataCh)
 
 	recognizer := audio.NewRecognizer()
 	go recognizer.Recognize(dataCh, tagCh)
@@ -18,7 +19,7 @@ func main() {
 	aggregator := text.NewAggregator()
 	go aggregator.Aggregate(tagCh)
 
-	<-listener.Done()
-	<-recognizer.Done()
-	<-aggregator.Done()
+	<-l.Done()
+	//<-recognizer.Done()
+	//<-aggregator.Done()
 }
