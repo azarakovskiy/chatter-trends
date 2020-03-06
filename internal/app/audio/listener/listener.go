@@ -1,16 +1,17 @@
 package listener
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/gordonklaus/portaudio"
+	"io"
 	"log"
+	"math"
 )
 
 const sampleRate = 44100
 const seconds = 1
 
-type Data *bytes.Buffer
+type Data []byte
 
 type Listener interface {
 	Listen(chan<- Data)
@@ -18,7 +19,9 @@ type Listener interface {
 }
 
 type listener struct {
-	done chan struct{}
+	i      int
+	chunks []Data
+	done   chan struct{}
 }
 
 func NewListener() *listener {
@@ -27,13 +30,22 @@ func NewListener() *listener {
 	}
 }
 
-func (l listener) Listen(data chan<- Data) {
+func (l *listener) Listen() {
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
 	buffer := make([]int32, sampleRate*seconds)
 	stream, err := portaudio.OpenDefaultStream(1, 0, sampleRate, len(buffer), func(buff []float32) {
-		fmt.Println(buff)
+		chunk := []byte{}
+
+		for _, i := range buff {
+			n := math.Float32bits(i)
+			chunk = append(chunk, byte(n))
+		}
+
+		l.chunks = append(l.chunks, chunk)
+
+		fmt.Println(len(l.chunks))
 	})
 
 	if err != nil {
@@ -47,6 +59,17 @@ func (l listener) Listen(data chan<- Data) {
 
 	defer stream.Close()
 	<-l.done
+}
+
+func (l *listener) Read(p []byte) (int, error) {
+	if l.i >= len(l.chunks) {
+		return 0, io.EOF
+	}
+
+	copy(p, l.chunks[l.i])
+	l.i += 1
+
+	return sampleRate, nil
 }
 
 func (l listener) Done() <-chan struct{} {

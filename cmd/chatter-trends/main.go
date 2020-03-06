@@ -1,23 +1,29 @@
 package main
 
 import (
-	"github.com/taxibeat/hackathon-chatter-trends/internal/app/audio"
+	"bufio"
+	"fmt"
 	listener "github.com/taxibeat/hackathon-chatter-trends/internal/app/audio/listener"
-	"github.com/taxibeat/hackathon-chatter-trends/internal/app/text"
 )
 
 func main() {
-	dataCh := make(chan listener.Data)
-	tagCh := make(chan text.Tag)
+	//dataCh := make(chan listener.Data)
+	//tagCh := make(chan text.Tag)
 
 	l := listener.NewListener()
-	go l.Listen(dataCh)
+	go l.Listen()
 
-	recognizer := audio.NewRecognizer()
-	go recognizer.Recognize(dataCh, tagCh)
+	scanner := bufio.NewScanner(l)
 
-	aggregator := text.NewAggregator()
-	go aggregator.Aggregate(tagCh)
+	for scanner.Scan() {
+		fmt.Println(scanner.Bytes())
+	}
+
+	//recognizer := audio.NewRecognizer()
+	//go recognizer.Recognize(dataCh, tagCh)
+	//
+	//aggregator := text.NewAggregator()
+	//go aggregator.Aggregate(tagCh)
 
 	<-l.Done()
 	//<-recognizer.Done()
